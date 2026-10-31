@@ -2,36 +2,14 @@
 import { useState } from 'react'
 import './App.css'
 
-const lessons = [
-  {
-    title: 'Mengenal Aksara Bali',
-    desc: 'Kenali sejarah dan keunikan aksara Bali.',
-    icon: '📜',
-    tag: 'PENGENALAN',
-    target: 'sejarah',
-  },
-  {
-    title: 'Jelajahi Aksara',
-    desc: 'Pelajari dasar-dasar bentuk aksara Bali.',
-    icon: '🌿',
-    tag: 'MATERI',
-    target: 'aksara',
-  },
-  {
-    title: 'Kosakata & Kalimat',
-    desc: 'Belajar melalui contoh kata sehari-hari.',
-    icon: '📖',
-    tag: 'PRAKTIK',
-    target: 'kosakata',
-  },
-  {
-    title: 'Tes Kemampuan',
-    desc: 'Uji pemahamanmu dengan kuis singkat.',
-    icon: '✏️',
-    tag: 'KUIS',
-    target: 'kuis',
-  },
-]
+type Page =
+  | 'home'
+  | 'about'
+  | 'aksara'
+  | 'material'
+  | 'kosakata'
+  | 'kalimat'
+  | 'kuis'
 
 const aksaraCategories = [
   'Aksara Wreastra',
@@ -44,45 +22,75 @@ const aksaraCategories = [
 ]
 
 function App() {
+  const [page, setPage] = useState<Page>('home')
+  const [selectedCategory, setSelectedCategory] = useState('')
   const [answer, setAnswer] = useState('')
   const [checked, setChecked] = useState(false)
   const [score, setScore] = useState(0)
 
-  const [showAksara, setShowAksara] = useState(false)
-  const [selectedCategory, setSelectedCategory] = useState('')
+  const navigate = (nextPage: Page) => {
+    setPage(nextPage)
+    setSelectedCategory('')
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
+  const openMaterial = (category: string) => {
+    setSelectedCategory(category)
+    setPage('material')
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
 
   const checkAnswer = () => {
-    if (!answer) return
+    if (!answer || checked) return
 
     if (answer === 'B') {
-      setScore(score + 1)
+      setScore((previous) => previous + 1)
     }
 
     setChecked(true)
   }
 
-  return (
-    <main>
-      <header className="navbar">
-        <a href="#home" className="logo">
-          <span className="logo-mark"></span>
-          <span>
-            AKSA<span className="logo-accent">RUNIKA</span>
-          </span>
-        </a>
+  const renderHeader = () => (
+    <header className="navbar">
+      <button className="logo" onClick={() => navigate('home')}>
+        <span className="logo-mark"></span>
+        <span>
+          AKSA<span className="logo-accent">RUNIKA</span>
+        </span>
+      </button>
 
-        <nav>
-          <a href="#home">Beranda</a>
-          <a href="#belajar">Mulai Belajar</a>
-          <a href="#tentang">Tentang</a>
-        </nav>
+      <nav>
+        <button onClick={() => navigate('home')}>Beranda</button>
+        <button onClick={() => navigate('about')}>Tentang</button>
+        <button onClick={() => navigate('aksara')}>Jelajahi Aksara</button>
+        <button onClick={() => navigate('kosakata')}>Kosakata</button>
+        <button onClick={() => navigate('kalimat')}>Kalimat</button>
+        <button onClick={() => navigate('kuis')}>Tes Kemampuan</button>
+      </nav>
 
-        <a href="#belajar" className="nav-button">
-          Mulai Sekarang ↗
-        </a>
-      </header>
+      <button
+        className="nav-button"
+        onClick={() => navigate('aksara')}
+      >
+        Mulai Belajar ↗
+      </button>
+    </header>
+  )
 
-      {/* HERO */}
+  const renderFooter = () => (
+    <footer>
+      <button className="logo" onClick={() => navigate('home')}>
+        <span className="logo-mark"></span>
+        AKSA<span className="logo-accent">RUNIKA</span>
+      </button>
+
+      <p>Ngiring sareng-sareng melestarikan budaya Bali.</p>
+      <small>© 2026 AKSARUNIKA</small>
+    </footer>
+  )
+
+  const renderHome = () => (
+    <>
       <section className="hero" id="home">
         <div className="hero-text">
           <div className="pill">
@@ -101,13 +109,19 @@ function App() {
           </p>
 
           <div className="hero-actions">
-            <a href="#belajar" className="button-primary">
-              Mulai Belajar <span>→</span>
-            </a>
+            <button
+              className="button-primary"
+              onClick={() => navigate('aksara')}
+            >
+              Mulai Belajar →
+            </button>
 
-            <a href="#tentang" className="button-secondary">
+            <button
+              className="button-secondary"
+              onClick={() => navigate('about')}
+            >
               Kenali Aksara Bali
-            </a>
+            </button>
           </div>
 
           <div className="hero-note">
@@ -148,31 +162,93 @@ function App() {
         </div>
       </section>
 
-      {/* STATISTIK */}
       <section className="stats">
-        <div>
-          <strong>01</strong>
-          <span>Kenali budaya</span>
-        </div>
-        <div>
-          <strong>02</strong>
-          <span>Pelajari aksara</span>
-        </div>
-        <div>
-          <strong>03</strong>
-          <span>Latih kemampuan</span>
-        </div>
-        <div>
-          <strong>04</strong>
-          <span>Lestarikan warisan</span>
-        </div>
+        <div><strong>01</strong><span>Kenali budaya</span></div>
+        <div><strong>02</strong><span>Pelajari aksara</span></div>
+        <div><strong>03</strong><span>Latih kemampuan</span></div>
+        <div><strong>04</strong><span>Lestarikan warisan</span></div>
       </section>
 
-      {/* TENTANG */}
-      <section className="about" id="tentang">
+      <section className="lessons">
+        <div className="eyebrow">RUANG BELAJAR</div>
+        <h2>Mulai perjalanan <span>belajarmu.</span></h2>
+        <p className="section-desc">
+          Pilih ruang pembelajaran yang ingin kamu kunjungi.
+        </p>
+
+        <div className="lesson-grid">
+          <button
+            className="lesson-card"
+            onClick={() => navigate('aksara')}
+          >
+            <div className="lesson-top">
+              <span className="lesson-icon">🌿</span>
+              <span className="lesson-number">01</span>
+            </div>
+            <span className="lesson-tag">MATERI</span>
+            <h3>Jelajahi Aksara</h3>
+            <p>Pelajari tujuh bagian utama Aksara Bali.</p>
+            <span className="lesson-link">Buka halaman ↗</span>
+          </button>
+
+          <button
+            className="lesson-card"
+            onClick={() => navigate('kosakata')}
+          >
+            <div className="lesson-top">
+              <span className="lesson-icon">📖</span>
+              <span className="lesson-number">02</span>
+            </div>
+            <span className="lesson-tag">PRAKTIK</span>
+            <h3>Kosakata</h3>
+            <p>Kenali kosakata bahasa Bali sehari-hari.</p>
+            <span className="lesson-link">Buka halaman ↗</span>
+          </button>
+
+          <button
+            className="lesson-card"
+            onClick={() => navigate('kalimat')}
+          >
+            <div className="lesson-top">
+              <span className="lesson-icon">✍️</span>
+              <span className="lesson-number">03</span>
+            </div>
+            <span className="lesson-tag">PEMBELAJARAN</span>
+            <h3>Kalimat</h3>
+            <p>Pelajari contoh kalimat dalam Aksara Bali.</p>
+            <span className="lesson-link">Buka halaman ↗</span>
+          </button>
+
+          <button
+            className="lesson-card"
+            onClick={() => navigate('kuis')}
+          >
+            <div className="lesson-top">
+              <span className="lesson-icon">✏️</span>
+              <span className="lesson-number">04</span>
+            </div>
+            <span className="lesson-tag">KUIS</span>
+            <h3>Tes Kemampuan</h3>
+            <p>Uji pemahamanmu melalui latihan interaktif.</p>
+            <span className="lesson-link">Buka halaman ↗</span>
+          </button>
+        </div>
+      </section>
+    </>
+  )
+
+  const renderAbout = () => (
+    <section className="page-content">
+      <button className="back-button" onClick={() => navigate('home')}>
+        ← Kembali ke Beranda
+      </button>
+
+      <div className="eyebrow">CERITA DI BALIK AKSARA</div>
+      <h1>Warisan yang perlu <span>dihidupkan.</span></h1>
+
+      <div className="about">
         <div className="about-art">
           <div className="palm">🌴</div>
-
           <div className="lontar">
             <span>WARISAN</span>
             <strong>Budaya Bali</strong>
@@ -181,263 +257,214 @@ function App() {
         </div>
 
         <div className="about-text">
-          <div className="eyebrow">CERITA DI BALIK AKSARA</div>
-
-          <h2>
-            Warisan yang perlu
-            <br />
-            terus <span>dihidupkan.</span>
-          </h2>
-
           <p>
             Aksara Bali adalah bagian dari identitas dan warisan budaya
             masyarakat Bali. Melalui teknologi, kita dapat membuka
             cara baru untuk mengenal dan mempelajarinya.
           </p>
-
-          <a href="#belajar" className="text-link">
-            Jelajahi materi <span>→</span>
-          </a>
-        </div>
-      </section>
-
-      {/* RUANG BELAJAR */}
-      <section className="lessons" id="belajar">
-        <div className="eyebrow">RUANG BELAJAR</div>
-
-        <h2>
-          Mulai perjalanan <span>belajarmu.</span>
-        </h2>
-
-        <p className="section-desc">
-          Pilih materi yang ingin kamu pelajari hari ini.
-        </p>
-
-        <div className="lesson-grid">
-          {lessons.map((lesson, index) =>
-            lesson.target === 'aksara' ? (
-              <button
-                className="lesson-card"
-                key={lesson.title}
-                onClick={() => {
-                  setShowAksara(!showAksara)
-                  setSelectedCategory('')
-                }}
-              >
-                <div className="lesson-top">
-                  <span className="lesson-icon">{lesson.icon}</span>
-                  <span className="lesson-number">
-                    0{index + 1}
-                  </span>
-                </div>
-
-                <span className="lesson-tag">{lesson.tag}</span>
-                <h3>{lesson.title}</h3>
-                <p>{lesson.desc}</p>
-
-                <span className="lesson-link">
-                  {showAksara
-                    ? 'Tutup materi ↑'
-                    : 'Pelajari sekarang ↗'}
-                </span>
-              </button>
-            ) : (
-              <a
-                href={`#${lesson.target}`}
-                className="lesson-card"
-                key={lesson.title}
-              >
-                <div className="lesson-top">
-                  <span className="lesson-icon">{lesson.icon}</span>
-                  <span className="lesson-number">
-                    0{index + 1}
-                  </span>
-                </div>
-
-                <span className="lesson-tag">{lesson.tag}</span>
-                <h3>{lesson.title}</h3>
-                <p>{lesson.desc}</p>
-
-                <span className="lesson-link">
-                  Pelajari sekarang ↗
-                </span>
-              </a>
-            )
-          )}
-        </div>
-
-        {/* SUBMENU TUJUH KATEGORI AKSARA */}
-        {showAksara && (
-          <div className="aksara-submenu" id="aksara">
-            <div className="eyebrow">
-              RUANG BELAJAR AKSARA
-            </div>
-
-            <h2>
-              Jelajahi Bagian <span>Aksara Bali.</span>
-            </h2>
-
-            <p className="section-desc">
-              Pilih bagian aksara yang ingin kamu pelajari.
-            </p>
-
-            {!selectedCategory ? (
-              <div className="category-grid">
-                {aksaraCategories.map((category, index) => (
-                  <button
-                    className="category-card"
-                    key={category}
-                    onClick={() => setSelectedCategory(category)}
-                  >
-                    <span className="category-number">
-                      0{index + 1}
-                    </span>
-
-                    <h3>{category}</h3>
-
-                    <span className="lesson-link">
-                      Pelajari materi ↗
-                    </span>
-                  </button>
-                ))}
-              </div>
-            ) : (
-              <div className="material-panel">
-                <button
-                  className="back-button"
-                  onClick={() => setSelectedCategory('')}
-                >
-                  ← Kembali ke daftar materi
-                </button>
-
-                <h3>{selectedCategory}</h3>
-
-                <p>
-                  Materi {selectedCategory} akan ditampilkan
-                  di bagian ini.
-                </p>
-              </div>
-            )}
-          </div>
-        )}
-      </section>
-
-      {/* KOSAKATA */}
-      <section className="vocabulary" id="kosakata">
-        <div className="vocab-content">
-          <div className="eyebrow">
-            BELAJAR DARI KESEHARIAN
-          </div>
-
-          <h2>
-            Kata sederhana,
-            <br />
-            <span>makna bermakna.</span>
-          </h2>
-
           <p>
-            Mulai mengenal kosakata Bali melalui contoh yang dekat
-            dengan kehidupan sehari-hari.
+            AKSARUNIKA hadir sebagai ruang belajar digital untuk
+            membantu generasi muda mengenal dan melestarikan
+            Aksara Bali.
           </p>
-
-          <div className="vocab-example">
-            <span>CONTOH KOSAKATA</span>
-            <strong>Rahajeng Semeng</strong>
-            <small>Selamat pagi</small>
-          </div>
+          <button
+            className="button-primary"
+            onClick={() => navigate('aksara')}
+          >
+            Mulai Jelajahi Aksara →
+          </button>
         </div>
+      </div>
+    </section>
+  )
 
-        <div className="vocab-art">
-          <div className="flower">✿</div>
-          <div className="lontar-book">📚</div>
-          <div className="vocab-caption">
-            Malajah sareng-sareng
-          </div>
-        </div>
-      </section>
+  const renderAksara = () => (
+    <section className="page-content">
+      <button className="back-button" onClick={() => navigate('home')}>
+        ← Kembali ke Beranda
+      </button>
 
-      {/* KUIS */}
-      <section className="quiz" id="kuis">
-        <div className="eyebrow">UJI PEMAHAMANMU</div>
+      <div className="eyebrow">RUANG BELAJAR AKSARA</div>
+      <h1>Jelajahi Bagian <span>Aksara Bali.</span></h1>
 
-        <h2>
-          Sudah siap <span>mencoba?</span>
-        </h2>
+      <p className="section-desc">
+        Pilih kategori yang ingin kamu pelajari.
+      </p>
 
-        <div className="quiz-card">
-          <div className="quiz-meta">
-            <span>LATIHAN PEMULA</span>
-            <span>PERTANYAAN 01</span>
-          </div>
+      <div className="category-grid">
+        {aksaraCategories.map((category, index) => (
+          <button
+            className="category-card"
+            key={category}
+            onClick={() => openMaterial(category)}
+          >
+            <span className="category-number">0{index + 1}</span>
+            <h3>{category}</h3>
+            <span className="lesson-link">Pelajari materi ↗</span>
+          </button>
+        ))}
+      </div>
+    </section>
+  )
 
-          <h3>
-            Apa arti dari ungkapan “Rahajeng Semeng”?
-          </h3>
+  const renderMaterial = () => (
+    <section className="page-content">
+      <button className="back-button" onClick={() => navigate('aksara')}>
+        ← Kembali ke Jelajahi Aksara
+      </button>
 
-          <div className="answers">
-            {[
-              ['A', 'Selamat malam'],
-              ['B', 'Selamat pagi'],
-              ['C', 'Selamat jalan'],
-            ].map(([key, value]) => (
-              <button
-                key={key}
-                className={`answer ${
-                  answer === key ? 'selected' : ''
-                } ${
-                  checked && key === 'B' ? 'correct' : ''
-                } ${
-                  checked && answer === key && key !== 'B'
-                    ? 'wrong'
-                    : ''
-                }`}
-                onClick={() => {
-                  setAnswer(key)
-                  setChecked(false)
-                }}
-                disabled={checked}
-              >
-                <span>{key}</span>
-                {value}
-              </button>
-            ))}
-          </div>
+      <div className="eyebrow">MATERI PEMBELAJARAN</div>
+      <h1>{selectedCategory}</h1>
 
-          {checked && (
-            <p className="feedback">
-              {answer === 'B'
-                ? 'Benar! Hebat, pertahankan!'
-                : 'Belum tepat. Jawaban yang benar adalah Selamat pagi.'}
-            </p>
-          )}
-
-          <div className="quiz-bottom">
-            <span>Skor benar: {score}</span>
-
-            <button
-              className="button-primary"
-              onClick={checkAnswer}
-              disabled={!answer || checked}
-            >
-              Periksa Jawaban →
-            </button>
-          </div>
-        </div>
-      </section>
-
-      {/* FOOTER */}
-      <footer>
-        <a href="#home" className="logo">
-          <span className="logo-mark"></span>
-          AKSA<span className="logo-accent">RUNIKA</span>
-        </a>
-
+      <div className="material-panel">
+        <h3>Materi {selectedCategory}</h3>
         <p>
-          Ngiring sareng-sareng melestarikan budaya Bali.
+          Bagian ini disiapkan untuk materi {selectedCategory}.
+          Kamu bisa menambahkan penjelasan, gambar, tabel,
+          contoh penulisan, dan latihan dari dokumen Word-mu nanti.
         </p>
+      </div>
+    </section>
+  )
 
-        <small>© 2026 AKSARUNIKA</small>
-      </footer>
+  const renderKosakata = () => (
+    <section className="page-content">
+      <button className="back-button" onClick={() => navigate('home')}>
+        ← Kembali ke Beranda
+      </button>
+
+      <div className="eyebrow">BELAJAR DARI KESEHARIAN</div>
+      <h1>Kosakata <span>Bahasa Bali.</span></h1>
+
+      <p className="section-desc">
+        Pelajari kosakata bahasa Bali melalui contoh sehari-hari.
+      </p>
+
+      <div className="material-panel">
+        <span className="lesson-tag">CONTOH KOSAKATA</span>
+        <h2>Rahajeng Semeng</h2>
+        <p>Selamat pagi</p>
+        <p>Materi kosakata lainnya akan kamu tambahkan di sini.</p>
+      </div>
+    </section>
+  )
+
+  const renderKalimat = () => (
+    <section className="page-content">
+      <button className="back-button" onClick={() => navigate('home')}>
+        ← Kembali ke Beranda
+      </button>
+
+      <div className="eyebrow">BELAJAR MENYUSUN KALIMAT</div>
+      <h1>Kalimat <span>Bahasa Bali.</span></h1>
+
+      <p className="section-desc">
+        Pelajari contoh kalimat bahasa Bali beserta penulisannya.
+      </p>
+
+      <div className="material-panel">
+        <h3>Ruang Materi Kalimat</h3>
+        <p>
+          Tambahkan contoh kalimat bahasa Bali, penulisan Aksara Bali,
+          terjemahan, dan cara membacanya di bagian ini.
+        </p>
+      </div>
+    </section>
+  )
+
+  const renderQuiz = () => (
+    <section className="page-content">
+      <button className="back-button" onClick={() => navigate('home')}>
+        ← Kembali ke Beranda
+      </button>
+
+      <div className="eyebrow">UJI PEMAHAMANMU</div>
+      <h1>Tes <span>Kemampuan.</span></h1>
+
+      <div className="quiz-card">
+        <div className="quiz-meta">
+          <span>LATIHAN PEMULA</span>
+          <span>PERTANYAAN 01</span>
+        </div>
+
+        <h3>Apa arti dari ungkapan “Rahajeng Semeng”?</h3>
+
+        <div className="answers">
+          {[
+            ['A', 'Selamat malam'],
+            ['B', 'Selamat pagi'],
+            ['C', 'Selamat jalan'],
+          ].map(([key, value]) => (
+            <button
+              key={key}
+              className={`answer ${
+                answer === key ? 'selected' : ''
+              } ${
+                checked && key === 'B' ? 'correct' : ''
+              } ${
+                checked && answer === key && key !== 'B' ? 'wrong' : ''
+              }`}
+              onClick={() => {
+                setAnswer(key)
+                setChecked(false)
+              }}
+              disabled={checked}
+            >
+              <span>{key}</span>
+              {value}
+            </button>
+          ))}
+        </div>
+
+        {checked && (
+          <p className="feedback">
+            {answer === 'B'
+              ? 'Benar! Hebat, pertahankan!'
+              : 'Belum tepat. Jawaban yang benar adalah Selamat pagi.'}
+          </p>
+        )}
+
+        <div className="quiz-bottom">
+          <span>Skor benar: {score}</span>
+
+          <button
+            className="button-primary"
+            onClick={checkAnswer}
+            disabled={!answer || checked}
+          >
+            Periksa Jawaban →
+          </button>
+        </div>
+      </div>
+    </section>
+  )
+
+  const renderCurrentPage = () => {
+    switch (page) {
+      case 'home':
+        return renderHome()
+      case 'about':
+        return renderAbout()
+      case 'aksara':
+        return renderAksara()
+      case 'material':
+        return renderMaterial()
+      case 'kosakata':
+        return renderKosakata()
+      case 'kalimat':
+        return renderKalimat()
+      case 'kuis':
+        return renderQuiz()
+      default:
+        return renderHome()
+    }
+  }
+
+  return (
+    <main>
+      {renderHeader()}
+      {renderCurrentPage()}
+      {renderFooter()}
     </main>
   )
 }

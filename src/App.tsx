@@ -14,13 +14,14 @@ type Page =
    
 
 const aksaraCategories = [
-  'Aksara Wreastra',
+  'Aksara Wianjana',
   'Gantungan & Gempelan',
   'Pengangge Suara',
   'Aksara Swalalita',
   'Angka Bali',
   'Pengangge Tengenan',
   'Ceciren & Tanda Baca',
+  'Uger-uger aksara bali'
 ]
 
 function App() {

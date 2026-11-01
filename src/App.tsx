@@ -10,6 +10,8 @@ type Page =
   | 'kosakata'
   | 'kalimat'
   | 'kuis'
+  | 'ai'
+   
 
 const aksaraCategories = [
   'Aksara Wreastra',
@@ -27,6 +29,11 @@ function App() {
   const [answer, setAnswer] = useState('')
   const [checked, setChecked] = useState(false)
   const [score, setScore] = useState(0)
+  const [aiInput, setAiInput] = useState('')
+const [aiMessages, setAiMessages] = useState<
+  { role: 'user' | 'assistant'; content: string }[]
+>([])
+const [aiLoading, setAiLoading] = useState(false)
 
   const navigate = (nextPage: Page) => {
     setPage(nextPage)
@@ -50,6 +57,55 @@ function App() {
     setChecked(true)
   }
 
+const sendAiMessage = async () => {
+  const question = aiInput.trim()
+
+  if (!question || aiLoading) return
+
+  const updatedMessages = [
+    ...aiMessages,
+    { role: 'user' as const, content: question },
+  ]
+
+  setAiMessages(updatedMessages)
+  setAiInput('')
+  setAiLoading(true)
+
+  try {
+    const response = await fetch('/api/chat', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        message: question,
+        history: aiMessages,
+      }),
+    })
+
+    const data = await response.json()
+
+    if (!response.ok) {
+      throw new Error(data.error || 'Gagal mendapatkan jawaban.')
+    }
+
+    setAiMessages([
+      ...updatedMessages,
+      { role: 'assistant', content: data.answer },
+    ])
+  } catch (error) {
+    setAiMessages([
+      ...updatedMessages,
+      {
+        role: 'assistant',
+        content: 'Maaf, terjadi kendala. Silakan coba lagi.',
+      },
+    ])
+  } finally {
+    setAiLoading(false)
+  }
+}
+
   const renderHeader = () => (
     <header className="navbar">
       <button className="logo" onClick={() => navigate('home')}>
@@ -66,6 +122,7 @@ function App() {
         <button onClick={() => navigate('kosakata')}>Kosakata</button>
         <button onClick={() => navigate('kalimat')}>Kalimat</button>
         <button onClick={() => navigate('kuis')}>Tes Kemampuan</button>
+        <button onClick={() => navigate('ai')}>AI Tutor</button>
       </nav>
 
       <button
@@ -439,6 +496,68 @@ function App() {
     </section>
   )
 
+  
+const renderAiTutor = () => (
+  <section className="page-content">
+    <button className="back-button" onClick={() => navigate('home')}>
+      ← Kembali ke Beranda
+    </button>
+
+    <div className="eyebrow">TEMAN BELAJAR DIGITAL</div>
+    <h1>AI <span>Tutor AKSARUNIKA.</span></h1>
+
+    <p className="section-desc">
+      Tanyakan apa saja tentang Aksara Bali dan pengetahuan umum.
+    </p>
+
+    <div className="material-panel">
+      <div className="ai-chat-messages">
+        {aiMessages.length === 0 && (
+          <div>
+            <h3>Rahajeng rauh! 👋</h3>
+            <p>
+              Aku AI Tutor AKSARUNIKA. Yuk, belajar Aksara Bali
+              bersama! Ada yang ingin kamu tanyakan?
+            </p>
+          </div>
+        )}
+
+        {aiMessages.map((item, index) => (
+          <div key={index}>
+            <strong>
+              {item.role === 'user' ? 'Kamu' : 'AI Tutor'}
+            </strong>
+            <p>{item.content}</p>
+          </div>
+        ))}
+
+        {aiLoading && <p>AI Tutor sedang berpikir...</p>}
+      </div>
+
+      <div className="ai-chat-input">
+        <input
+          type="text"
+          value={aiInput}
+          onChange={(event) => setAiInput(event.target.value)}
+          onKeyDown={(event) => {
+            if (event.key === 'Enter') sendAiMessage()
+          }}
+          placeholder="Tulis pertanyaanmu di sini..."
+        />
+
+        <button
+          className="button-primary"
+          onClick={sendAiMessage}
+          disabled={aiLoading || !aiInput.trim()}
+        >
+          Kirim →
+        </button>
+      </div>
+    </div>
+  </section>
+)
+
+  
   const renderCurrentPage = () => {
     switch (page) {
       case 'home':
@@ -455,6 +574,8 @@ function App() {
         return renderKalimat()
       case 'kuis':
         return renderQuiz()
+      case 'ai':
+        return renderAiTutor()
       default:
         return renderHome()
     }

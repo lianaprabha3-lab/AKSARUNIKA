@@ -1,13 +1,8 @@
 
-const sleep = (ms) =>
-  new Promise((resolve) => setTimeout(resolve, ms));
-
-const RETRYABLE_STATUS = [429, 500, 502, 503, 504];
-
 export default async function handler(req, res) {
   if (req.method !== "POST") {
     return res.status(405).json({
-      error: "Method not allowed",
+      error: "Method not allowed.",
     });
   }
 
@@ -16,13 +11,13 @@ export default async function handler(req, res) {
 
     if (!apiKey) {
       return res.status(500).json({
-        error: "GEMINI_API_KEY belum ditemukan di Environment Variables.",
+        error: "GEMINI_API_KEY belum ditemukan di Vercel.",
       });
     }
 
     const { message, history = [] } = req.body || {};
 
-    if (!message || typeof message !== "string") {
+    if (typeof message !== "string" || !message.trim()) {
       return res.status(400).json({
         error: "Silakan masukkan pertanyaan terlebih dahulu.",
       });
@@ -46,10 +41,19 @@ export default async function handler(req, res) {
       systemInstruction: {
         parts: [
           {
-           
-text:
-  "Kamu adalah AI Tutor AKSARUNIKA. Bantu pengguna belajar Aksara Bali dengan bahasa yang mudah dipahami. Kamu juga boleh menjawab pertanyaan umum. Gunakan Bahasa Indonesia atau Bahasa Bali sesuai bahasa pengguna. Berikan contoh jika diperlukan. Jangan mengarang aturan Aksara Bali jika tidak yakin. Jelaskan jika ada informasi yang belum dapat dipastikan. Gunakan teks biasa tanpa format Markdown. Jangan gunakan tanda bintang, tanda pagar, atau garis bawah untuk membuat tulisan tebal, miring, maupun judul. Susun jawaban dalam paragraf yang rapi. Jika menjelaskan beberapa langkah, gunakan penomoran 1., 2., 3. Gunakan bahasa yang ramah, jelas, dan cocok untuk pelajar pemula.",
-
+            text: [
+              "Kamu adalah AI Tutor AKSARUNIKA, pendamping belajar Aksara Bali.",
+              "Gunakan Bahasa Indonesia yang ramah dan mudah dipahami pemula.",
+              "Tampilkan karakter Aksara Bali menggunakan Unicode asli, bukan kode Unicode.",
+              "Jika menjelaskan kosakata atau kalimat Bahasa Bali, tampilkan tulisan Latin dan Aksara Bali berdampingan.",
+              "Jika pengguna meminta jawaban menggunakan Aksara Bali, tampilkan aksara aslinya.",
+              "Sertakan arti dan cara membaca dalam huruf Latin.",
+              "Gunakan aksara, pengangge suara, tengenan, gantungan, dan gempelan dengan tepat.",
+              "Jangan mengarang aturan atau bentuk Aksara Bali jika tidak yakin.",
+              "Gunakan teks biasa tanpa Markdown dan tanpa tanda bintang.",
+              "Susun jawaban dalam paragraf yang rapi dan gunakan penomoran jika diperlukan.",
+              "Jadilah tutor yang sabar, interaktif, dan membantu pengguna belajar secara bertahap."
+            ].join(" "),
           },
         ],
       },
@@ -57,7 +61,7 @@ text:
         ...previousMessages,
         {
           role: "user",
-          parts: [{ text: message }],
+          parts: [{ text: message.trim() }],
         },
       ],
       generationConfig: {
@@ -66,102 +70,62 @@ text:
     };
 
     const apiUrl =
-      "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent";
+      "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent";
 
-    let lastError = null;
+    const response = await fetch(apiUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-goog-api-key": apiKey,
+      },
+      body: JSON.stringify(requestBody),
+      signal: AbortSignal.timeout(50000),
+    });
 
-    // Maksimal 3 percobaan
-    for (let attempt = 0; attempt < 3; attempt++) {
-      try {
-        const response = await fetch(apiUrl, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "x-goog-api-key": apiKey,
-          },
-          body: JSON.stringify(requestBody),
-          signal: AbortSignal.timeout(20000),
-        });
+    const data = await response.json().catch(() => ({}));
 
-        const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      console.error("Gemini API Error:", {
+        status: response.status,
+        error: data.error?.message,
+      });
 
-        if (!response.ok) {
-          console.error("Gemini API Error:", {
-            status: response.status,
-            error: data.error?.message,
-          });
-
-          lastError = {
-            status: response.status,
-            message: data.error?.message || "Gemini API gagal memproses permintaan.",
-          };
-
-          if (
-            RETRYABLE_STATUS.includes(response.status) &&
-            attempt < 2
-          ) {
-            await sleep(1000 * (attempt + 1));
-            continue;
-          }
-
-          break;
-        }
-
-        const answer = data.candidates?.[0]?.content?.parts
-          ?.map((part) => part.text || "")
-          .join("")
-          .trim();
-
-        if (!answer) {
-          return res.status(502).json({
-            error: "Gemini belum memberikan jawaban. Silakan coba lagi.",
-          });
-        }
-
-        return res.status(200).json({ answer });
-      } catch (error) {
-        lastError = {
-          status: 504,
-          message: error.message,
-        };
-
-        console.error("Gemini Request Error:", error.message);
-
-        if (attempt < 2) {
-          await sleep(1000 * (attempt + 1));
-          continue;
-        }
-      }
-    }
-
-    if (lastError) {
-      if (lastError.status === 503 || lastError.status === 504) {
-        return res.status(lastError.status).json({
-          error:
-            "Layanan AI sedang sibuk atau membutuhkan waktu lebih lama. Silakan coba kembali beberapa saat lagi.",
-        });
-      }
-
-      if (lastError.status === 429) {
+      if (response.status === 429) {
         return res.status(429).json({
-          error:
-            "Batas penggunaan AI sedang tercapai. Silakan coba kembali nanti.",
+          error: "Batas penggunaan AI sedang tercapai. Silakan coba kembali nanti.",
         });
       }
 
-      return res.status(lastError.status).json({
-        error: "AI Tutor belum dapat memproses pertanyaan. Silakan coba lagi.",
+      return res.status(502).json({
+        error: "Gemini belum dapat memproses pertanyaan. Silakan coba lagi.",
       });
     }
 
-    return res.status(502).json({
-      error: "AI Tutor belum memberikan jawaban. Silakan coba lagi.",
-    });
-  } catch (error) {
-    console.error("ERROR AI TUTOR:", error);
+    const answer = data.candidates?.[0]?.content?.parts
+      ?.map((part) => part.text || "")
+      .join("")
+      .trim();
 
-    return res.status(500).json({
-      error: "Terjadi kesalahan pada server AI. Silakan coba lagi.",
+    if (!answer) {
+      return res.status(502).json({
+        error: "Gemini belum memberikan jawaban. Silakan coba lagi.",
+      });
+    }
+
+    return res.status(200).json({ answer });
+
+  } catch (error) {
+    console.error("Gemini Request Error:", error);
+
+    const timedOut =
+      error.name === "TimeoutError" ||
+      error.name === "AbortError" ||
+      /timeout|aborted/i.test(error.message || "");
+
+    return res.status(timedOut ? 504 : 500).json({
+      error: timedOut
+        ? "AI Tutor membutuhkan waktu lebih lama. Silakan coba kembali."
+        : "Terjadi kesalahan pada server AI. Silakan coba lagi.",
     });
   }
 }
